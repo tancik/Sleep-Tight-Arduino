@@ -1,16 +1,62 @@
 int motorPin = 5;
 int directionPin = 8;
+float VHigh = 5;
+float minPosition = 0.01;
+float maxPosition = 0.9 * VHigh;
+int wiperPin = 0;
+int onSwitch = 6;
 
 void setup() {
   pinMode(motorPin, OUTPUT);
   pinMode(directionPin, OUTPUT);
+  pinMode(onSwitch,INPUT);
 
   //setPwmFrequency(motorPin, 256);
-  digitalWrite(directionPin, HIGH);
+  //digitalWrite(directionPin, HIGH);
 }
 
 void loop() {
-  analogWrite(motorPin, 128);
+  if (digitalRead(onSwitch) && analogRead(wiperPin)>=minPosition){
+    delay(1000);
+    if(digitalRead(onSwitch)){
+      bool returnval=Tighten(motorPin,wiperPin,onSwitch, directionPin);
+      if (returnval){
+        TurnOff(motorPin,wiperPin);
+      }
+    }
+  if(!digitalRead(onSwitch)&& analogRead(wiperPin)<=maxPosition){
+    TurnOff(motorPin,wiperPin);
+  }
+  }
+ 
+  
+  
+}
+
+void TurnOff(int motorPin, int wiperPin){
+  digitalWrite(directionPin,LOW);
+  digitalWrite(motorPin,255);
+  while(analogRead(wiperPin)<maxPosition){
+    delay(1);
+  }
+  digitalWrite(motorPin, 0);
+}
+bool Tighten(int motorPin, int wiperPin, int switchPin, int directionPin){
+  digitalWrite(directionPin, HIGH);
+  if (analogRead(wiperPin)>=minPosition){
+    analogWrite(motorPin,128);
+  }
+  while (digitalRead(switchPin)&& analogRead(wiperPin)>=minPosition){
+    delay(1);
+  }
+  if(!digitalRead(switchPin)){
+    analogWrite(motorPin,0);
+    return true;
+  }
+  else{
+    analogWrite(motorPin,0);
+    return false;
+  }
 }
 
 void setPwmFrequency(int pin, int divisor) {
