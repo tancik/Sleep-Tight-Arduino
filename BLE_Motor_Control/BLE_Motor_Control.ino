@@ -51,6 +51,11 @@ aci_evt_opcode_t laststatus = ACI_EVT_DISCONNECTED;
 
 void loop()
 {
+  // get potentiometer values
+  int potValue = analogRead(A3);
+  Serial.println(potValue);
+  delay(1);
+  
   // Tell the nRF8001 to do whatever it should be working on.
   BTLEserial.pollACI();
 
