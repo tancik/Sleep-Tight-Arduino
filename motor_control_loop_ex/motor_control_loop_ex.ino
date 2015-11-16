@@ -1,9 +1,12 @@
+#include "RunningAverage.h"
+
 int motorPin = 5;
 int directionPin = 8;
 int onOffPin = 3; // the pin value needs to be changed
 
 int onOffState = 0;
 bool direction = true;
+RunningAverage myRA(20);
 
 void setup() {
   Serial.begin(9600);
@@ -28,7 +31,8 @@ void loop() {
     digitalWrite(directionPin,HIGH); 
   }
   analogWrite(motorPin, 128);
-  Serial.println(analogRead(A1));
+  myRA.addValue(analogRead(A1));
+  Serial.println(myRA.getAverage());
 }
 
 void motorControl(int state) {
