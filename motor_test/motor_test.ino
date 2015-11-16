@@ -16,7 +16,8 @@ void setup() {
 }
 
 void loop() {
-  if (digitalRead(onSwitch) && analogRead(wiperPin)>=minPosition){
+//  if (digitalRead(onSwitch) && analogRead(wiperPin)>=minPosition){
+   if (analogRead(wiperPin)>=minPosition){
     delay(1000);
     if(digitalRead(onSwitch)){
       bool returnval=Tighten(motorPin,wiperPin,onSwitch, directionPin);
