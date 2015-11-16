@@ -1,26 +1,9 @@
-<<<<<<< HEAD
-#include "RunningAverage.h"
-
-=======
-#include <elapsedMillis.h>;
-elapsedMillis elapsedTime;
->>>>>>> 37e5b306739d7710de607d0bffca36ea8e6d78e9
 int motorPin = 5;
 int directionPin = 8;
 int onOffPin = 3; // the pin value needs to be changed
-int maxPosition=700;
-int onOffState = 0;
-<<<<<<< HEAD
-bool direction = true;
-RunningAverage myRA(20);
-=======
-//bool direction = true;
-int minPosition = 10;
-bool motorRunning = false;
-bool waiting = false;
-int waitTime = 1000;
 
->>>>>>> 37e5b306739d7710de607d0bffca36ea8e6d78e9
+int onOffState = 0;
+bool direction = true;
 
 void setup() {
   Serial.begin(9600);
@@ -28,42 +11,29 @@ void setup() {
   pinMode(motorPin, OUTPUT);
   pinMode(directionPin, OUTPUT);
   pinMode(onOffPin, INPUT);
+
+  //setPwmFrequency(motorPin, 256);
   digitalWrite(directionPin, HIGH);
-  analogWrite(motorPin,0);
 }
 
 void loop() {
   // check to see if there is a change in switch states
-  if(motorRunning &&(analogRead(A0)>maxPosition || analogRead(A0)<minPosition)){
-    analogWrite(motorPin,0);
-    motorRunning =false;
-  }
   if (onOffState != digitalRead(onOffPin)) {
     onOffState = digitalRead(onOffPin);
-    if (onOffState && analogRead(A0)>maxPosition){
-      waiting=true;
-      elapsedTime=0;     
-    }
-    else if(!onOffState && analogRead(A0)<minPosition){
-      waiting = false;
-      digitalWrite(directionPin,LOW);
-      analogWrite(motorPin,255); 
-      motorRunning=true;    
-    }
+    
   }
-  if (waiting && elapsedTime>waitTime){
-    waiting=false;
-    digitalWrite(directionPin, HIGH);
-    analogWrite(motorPin,122);
-    motorRunning = true;
+  if (analogRead(A0) > 1020){
+    digitalWrite(directionPin,LOW); 
+  } else if (analogRead(A0) < 10) {
+    digitalWrite(directionPin,HIGH); 
   }
-<<<<<<< HEAD
   analogWrite(motorPin, 128);
-  myRA.addValue(analogRead(A1));
-  Serial.println(myRA.getAverage());
-}
-=======
->>>>>>> 37e5b306739d7710de607d0bffca36ea8e6d78e9
-
+  Serial.println(analogRead(A1));
 }
 
+void motorControl(int state) {
+  if (state == 0) {
+    digitalWrite(directionPin, LOW);
+  }
+    
+}
