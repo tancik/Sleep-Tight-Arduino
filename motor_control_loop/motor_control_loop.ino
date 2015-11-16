@@ -1,4 +1,4 @@
-#include <elapsedMillis.h>;
+#include <elapsedMillis.h>
 elapsedMillis elapsedTime;
 int motorPin = 5;
 int directionPin = 8;
@@ -24,21 +24,26 @@ void setup() {
 
 void loop() {
   // check to see if there is a change in switch states
-  if(motorRunning &&(analogRead(A0)>maxPosition || analogRead(A0)<minPosition)){
+  if(motorRunning &&analogRead(A0)>maxPosition && motorIn){
     analogWrite(motorPin,0);
-    motorRunning =false;
+    motorRunning = false;
+  }
+  if (motorRunning && analogRead(A0)<minPosition && !motorIn){
+    analogWrite(motorPin,0);
+    motorRunning = false;
   }
   if (onOffState != digitalRead(onOffPin)) {
     onOffState = digitalRead(onOffPin);
-    if (onOffState && analogRead(A0)>maxPosition){
-      waiting=true;
-      elapsedTime=0;     
+    waiting = false;
+    if (onOffState && analogRead(A0)>minPosition){
+      waiting = true;
+      elapsedTime = 0;     
     }
-    else if(!onOffState && analogRead(A0)<minPosition){
-      waiting = false;
+    else if(!onOffState && analogRead(A0)<maxPosition){
       digitalWrite(directionPin,LOW);
       analogWrite(motorPin,255); 
-      motorRunning=true;    
+      motorRunning = true;
+      motorIn = false;    
     }
   }
   if (waiting && elapsedTime>waitTime){
@@ -46,6 +51,7 @@ void loop() {
     digitalWrite(directionPin, HIGH);
     analogWrite(motorPin,122);
     motorRunning = true;
+    motorIn = true;
   }
 
 }
