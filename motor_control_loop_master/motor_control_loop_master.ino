@@ -1,5 +1,6 @@
 #include "elapsedMillis.h"
 #include "RunningAverage.h"
+#include "Wire.h"
 
 elapsedMillis elapsedTime;
 RunningAverage myRA(20);
@@ -7,7 +8,7 @@ RunningAverage myRA(20);
 int motorPin = 5;
 int directionPin = 8;
 int onOffPin = 4; // the pin value needs to be changed
-int maxPosition=700;
+int maxPosition=1000;
 bool onOffState = false;
 bool onOffCheck = false;
 //bool direction = true;
@@ -21,7 +22,7 @@ int ledPin = 7;
 
 void setup() {
   Serial.begin(9600);
-  
+  Wire.begin();
   pinMode(motorPin, OUTPUT);
   pinMode(directionPin, OUTPUT);
   pinMode(onOffPin, INPUT_PULLUP);
@@ -33,7 +34,7 @@ void setup() {
 
 void loop() {
   int actuatorPos = analogRead(A0); // get the actuator pot value
-  
+  Serial.println(actuatorPos);
   // stop the motor if it has extended too far
   if(motorRunning && (actuatorPos > maxPosition) && !motorIn){    
     motorRunning = stopMotor(motorPin);
@@ -48,6 +49,28 @@ void loop() {
   // check to see if the on-off switch has been flipped
   if (onOffState == digitalRead(onOffPin)) {
     onOffState = !digitalRead(onOffPin);
+    Wire.beginTransmission(1);
+    if (onOffState==true){
+      Wire.write(5);
+      Wire.endTransmission();
+      Serial.println("Sent true");
+    }
+    else{
+      Wire.write(6);
+      Wire.endTransmission();
+      Serial.println("Sent false");
+    }
+    Wire.beginTransmission(2);
+    if (onOffState==true){
+      Wire.write(5);
+      Wire.endTransmission();
+      Serial.println("Sent true");
+    }
+    else{
+      Wire.write(6);
+      Wire.endTransmission();
+      Serial.println("Sent false");
+    }
     waiting = false;
     Serial.println("If 3");
     if (onOffState && (actuatorPos > minPosition)){

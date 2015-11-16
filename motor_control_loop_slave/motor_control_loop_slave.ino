@@ -1,5 +1,6 @@
 #include "elapsedMillis.h"
 #include "RunningAverage.h"
+#include "Wire.h"
 
 elapsedMillis elapsedTime;
 RunningAverage myRA(20);
@@ -17,11 +18,13 @@ bool waiting = false;
 int waitTime = 4000;
 bool motorIn = false;
 int ledPin = 7;
-
+int actuatorPos;
+bool changedState =false;
 
 void setup() {
+  Wire.begin(2);
+  Wire.onReceive(switchMasterState);
   Serial.begin(9600);
-  
   pinMode(motorPin, OUTPUT);
   pinMode(directionPin, OUTPUT);
   pinMode(onOffPin, INPUT_PULLUP);
@@ -33,7 +36,8 @@ void setup() {
 
 void loop() {
   int actuatorPos = analogRead(A0); // get the actuator pot value
-  
+  Serial.println(onOffState);
+  analogWrite(motorPin,125);
   // stop the motor if it has extended too far
   if(motorRunning && (actuatorPos > maxPosition) && !motorIn){    
     motorRunning = stopMotor(motorPin);
@@ -46,26 +50,7 @@ void loop() {
     Serial.println("If 2");
   }
   // check to see if the on-off switch has been flipped
-  if (onOffState == digitalRead(onOffPin)) {
-    onOffState = !digitalRead(onOffPin);
-    waiting = false;
-    Serial.println("If 3");
-    if (onOffState && (actuatorPos > minPosition)){
-      // wait if the device was turned on and the actuator arm is
-      // extended
-      controlLED(ledPin);
-      waiting = true;
-      elapsedTime = 0; // initialize the timer to 0
-      Serial.println("If 3 1");
-    }
-    else if(!onOffState && (actuatorPos < maxPosition)){
-      // extend the actuator arm if the device is turned off
-      digitalWrite(directionPin, HIGH);
-      Serial.println(digitalRead(directionPin));
-      motorRunning = startMotor(motorPin, 255);
-      motorIn = false;    
-    }
-  }
+  
   if (waiting && (elapsedTime > waitTime)){
     Serial.println("If 4");
     // if we have met the tightening criteria, start tightening
@@ -74,6 +59,24 @@ void loop() {
     motorRunning = startMotor(motorPin, 122);
     motorIn = true;
   }
+  if (onOffState && (actuatorPos > minPosition) && !waiting && changedState){
+      // wait if the device was turned on and the actuator arm is
+      // extended
+      changedState = false;
+      Serial.println("test");
+      controlLED(ledPin);
+      waiting = true;
+      elapsedTime = 0; // initialize the timer to 0
+      Serial.println("If 3 1");
+    }
+ else if(!onOffState && (actuatorPos < maxPosition) && changedState){
+      // extend the actuator arm if the device is turned off
+      digitalWrite(directionPin, HIGH);
+//      Serial.println(digitalRead(directionPin));
+      motorRunning = startMotor(motorPin, 255);
+      changedState=false;
+      motorIn = false;  
+}
 
 }
 
@@ -105,6 +108,25 @@ bool stopMotor(int motorPin) {
    return false;
 }
 
+void switchMasterState(int howMany){
+  changedState = true;
+  int x =Wire.read();
+  if(x==6){
+    Serial.println(x);
+    onOffState=false;
+  }
+  if (x==5){
+    Serial.println(x);
+    onOffState=true;
+  }
+//  Serial.println(onOffState);
+//  Serial.println(actuatorPos);
+//  Serial.println(minPosition);
+//  Serial.println(actuatorPos>minPosition);
+  
+}
+
+  
 void controlLED(int ledPin) {
   /*!
    * Blink the LED when called
