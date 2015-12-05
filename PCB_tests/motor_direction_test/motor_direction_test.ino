@@ -2,7 +2,7 @@
 //Switch direction after 2 seconds
 
 const int motorPin = 5;
-const int directionPin = 8;
+const int directionPin = 9;
 const int waitTime = 2000; //default is 2 seconds
 
 void setup() {

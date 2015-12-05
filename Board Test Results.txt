@@ -1,0 +1,28 @@
+PCB Board
+	Master:
+		-LED: Yes
+		-Basic Motor: Yes
+		-Reverse Motor: Yes
+		-On board limit interrupt (pin 3): Yes
+	Slave 1:
+		-LED: Yes
+		-Basic Motor: Yes
+		-Reverse Motor: Yes
+	Slave 2:
+		-LED: --
+		-Basic Motor: --
+		-Reverse Motor: --
+
+Backup Board Tests
+	Master:
+		-LED: Yes
+		-Basic Motor: Yes
+		-Reverse Motor: Yes
+	Slave 1:
+		-LED: Yes
+		-Basic Motor: Yes
+		-Reverse Motor: Yes
+	Slave 2:
+		-LED: Yes
+		-Basic Motor: --
+		-Reverse Motor: No
