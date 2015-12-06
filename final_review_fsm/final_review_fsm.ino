@@ -83,7 +83,6 @@ void setup() {
 //  pinMode(switchPollingPin, INPUT);
 //  pinMode(motorDirectionPin, OUTPUT);
   attachInterrupt(digitalPinToInterrupt(motorClosedPin), setMotorClosed, RISING);
-//  attachInterrupt(digitalPinToInterrupt(motorClosedPin), setMotorNotClosed, FALLING);
   attachInterrupt(digitalPinToInterrupt(powerBtnPin), setPowerPressed, RISING);
 }
 // debugging lines
@@ -117,6 +116,7 @@ void loop() {
 //utility functions
 void checkPowerPressed() {
   if (powerPressed) {
+//    Serial.println(powerPressed);
     if (stateMachine.isInState(poweredOff)) {
       stateMachine.transitionTo(turnedOn);
     }
@@ -128,7 +128,9 @@ void checkPowerPressed() {
 }
 
 void setPowerPressed() {
+  cli(); //disable interrupts
   powerPressed = true;
+  sei(); //reenable interrupt
 }
 
 void checkStatusPressed() {
@@ -152,12 +154,10 @@ bool checkHome() {
 }
 
 void setMotorClosed() {
+  cli(); //disable interrupts
   motorClosed = true;
+  sei(); //reenable interrupt
 }
-
-//void setMotorNotClosed() {
-//  motorClosed = false;
-//}
 
 //state machine utility functions
 void doGoingHome() {
