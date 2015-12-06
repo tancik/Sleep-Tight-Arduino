@@ -118,6 +118,7 @@ void checkPowerPressed() {
   if (powerPressed) {
 //    Serial.println(powerPressed);
     if (stateMachine.isInState(poweredOff)) {
+      blinkLED(statusLEDPin, 300, 3);
       stateMachine.transitionTo(turnedOn);
     }
     else {
@@ -157,6 +158,18 @@ void setMotorClosed() {
   cli(); //disable interrupts
   motorClosed = true;
   sei(); //reenable interrupt
+}
+
+void blinkLED(int ledPin, int blinkDelay, int numBlinks) {
+  /*!
+   * Blink the LED when called
+   */
+   for (int i=0; i < numBlinks; i++) {
+    digitalWrite(ledPin, HIGH);
+    delay(blinkDelay);
+    digitalWrite(ledPin, LOW);
+    delay(blinkDelay);
+   }
 }
 
 //state machine utility functions
