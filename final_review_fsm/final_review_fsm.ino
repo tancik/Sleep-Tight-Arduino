@@ -40,16 +40,7 @@ void doTurnedOn() {
   // This function was placed abote the initialize states to prevent a function 
   // not defined. Furthremore, we must "extend" the function to prevent calling
   // an FSM object function which does not exist yet.
-  if (checkHome()){
-    // if home, then wait
-    doTurnedOnTransitions(false);
-//    stateMachine.transitionTo(waiting); replaced above
-  }
-  else {
-    // if not home, go home
-    doTurnedOnTransitions(true);
-//    stateMachine.transitionTo(goingHome); replaced above
-  }
+  doTurnedOnTransition();
 }
 
 //initialize states
@@ -62,17 +53,9 @@ State poweringOff = State(doPoweringOff);
 State poweredOff = State(doPoweredOff);
 
 FSM stateMachine = FSM(turnedOn);     //initialize state machine, start in state: On
-//debugging
-//FSM previousStateMachine = FSM(turnedOn); 
-//debugging
 
-void doTurnedOnTransitions(bool nextState) {
-  if (nextState == true) {
-    stateMachine.transitionTo(goingHome);
-  }
-  else {
-    stateMachine.transitionTo(waiting);
-  }
+void doTurnedOnTransition() {
+  stateMachine.transitionTo(goingHome);
 }
 
 void setup() {
@@ -85,10 +68,6 @@ void setup() {
   attachInterrupt(digitalPinToInterrupt(motorClosedPin), setMotorClosed, RISING);
   attachInterrupt(digitalPinToInterrupt(powerBtnPin), setPowerPressed, RISING);
 }
-// debugging lines
-//State previousState = State(goingHome); 
-//previousStateMachine.transitionTo(stateMachine.getCurrentState());
-// debugging lines
 
 void loop() {
   //perform main loop checks
@@ -108,9 +87,6 @@ void loop() {
     else if (stateMachine.isInState(poweredOff)) {Serial.println("powered off");}
     else if (stateMachine.isInState(goingForward)) {Serial.println("going forward");}
   //}
-  //previousState = State(stateMachine.getCurrentState());
-  //Serial.println(stateMachine.isInState(previousState));
-  // debugging lines
 }
 
 //utility functions
