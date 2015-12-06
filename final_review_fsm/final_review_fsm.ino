@@ -26,6 +26,7 @@ const int waitTime = 4000;
 volatile bool motorClosed = false;
 volatile bool powerPressed = false;
 //anything else additional? add below.
+bool statusPressed = false;
 
 const byte NUMBER_OF_STATES = 6;
 
@@ -50,7 +51,36 @@ void setup() {
 }
 
 void loop() {
+  //perform main loop checks
+  checkPowerPressed();
+  checkStatusPressed();
   
-
+  stateMachine.update();
 }
+
+//utility functions
+void checkPowerPressed() {
+  if (powerPressed) {
+    if (stateMachine.getCurrentState() == poweredOff) {
+      stateMachine.transitionTo(turnedOn);
+    }
+    else {
+      stateMachine.transitionTo(poweredOff);
+    }
+  }
+}
+
+void checkStatusPressed() {
+  if (digitalRead(statusBtnPin) == HIGH) {
+    statusPressed = true;
+  }
+  if (statusPressed && stateMachine.getCurrentState() != poweredOff) {
+    analogWrite(motorPin, 128);
+  }
+  else {
+    analogWrite(motorPin, 0);
+  }
+}
+
+//state machine utility functions
 
