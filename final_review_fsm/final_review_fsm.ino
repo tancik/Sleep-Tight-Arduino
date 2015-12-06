@@ -21,8 +21,8 @@ const int motorDirectionPin = 9;
 const int statusLEDPin = 10;
 
 //important global parameters
-const int forwardMotorSpeed = 50;
-const int reverseMotorSpeed = 128;
+const int forwardMotorSpeed = 255;
+const int reverseMotorSpeed = 255;
 const bool forwardDirection = HIGH;
 const int waitTime = 4000;
 elapsedMillis timeElapsed;
@@ -78,7 +78,13 @@ void loop() {
   
   stateMachine.update();
   // debugging lines
-//  if (!stateMachine.isInState(previousState)){
+    Serial.print(digitalRead(powerBtnPin));
+    Serial.print("\t");
+    Serial.print(digitalRead(motorOpenPin));
+    Serial.print("\t");
+    Serial.print(digitalRead(motorClosedPin));
+    Serial.print("\t");
+    
     if (stateMachine.isInState(turnedOn)) {Serial.println("turned on");}
     else if (stateMachine.isInState(waiting)) {Serial.println("waiting");}
     else if (stateMachine.isInState(goingHome)) {Serial.println("going home");}
@@ -86,11 +92,11 @@ void loop() {
     else if (stateMachine.isInState(poweringOff)) {Serial.println("powering off");}
     else if (stateMachine.isInState(poweredOff)) {Serial.println("powered off");}
     else if (stateMachine.isInState(goingForward)) {Serial.println("going forward");}
-  //}
 }
 
 //utility functions
 void checkPowerPressed() {
+  Serial.println(powerPressed);
   if (powerPressed) {
 //    Serial.println(powerPressed);
     if (stateMachine.isInState(poweredOff)) {
@@ -106,7 +112,13 @@ void checkPowerPressed() {
 
 void setPowerPressed() {
   cli(); //disable interrupts
-  powerPressed = true;
+  Serial.println("setPowerPressed");
+  //This should be revised if possible. Due to erratic signals, the interrupt
+  //is being called during tightening. The poweringOff state is disabled
+  //during tightening as a consequence.
+  if (!stateMachine.isInState(goingForward) && !stateMachine.isInState(goingHome)) {
+    powerPressed = true;
+  }
   sei(); //reenable interrupt
 }
 
