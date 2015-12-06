@@ -90,6 +90,13 @@ void loop() {
   checkStatusPressed();
   
   stateMachine.update();
+
+  if (stateMachine.isInState(turnedOn)) {Serial.println("turned on");}
+  else if (stateMachine.isInState(waiting)) {Serial.println("waiting");}
+  else if (stateMachine.isInState(goingHome)) {Serial.println("going home");}
+  else if (stateMachine.isInState(stayingClosed)) {Serial.println("staying closed");}
+  else if (stateMachine.isInState(poweredOff)) {Serial.println("powered off");}
+  else if (stateMachine.isInState(goingForward)) {Serial.println("going forward");}
 }
 
 //utility functions
@@ -135,7 +142,7 @@ void setMotorClosed() {
 
 //state machine utility functions
 void doGoingHome() {
-  if (checkHome()) {
+  if (checkHome() && !stateMachine.isInState(waiting)) {
     analogWrite(motorPWMPin, 0);
     timeElapsed = 0;
     stateMachine.transitionTo(waiting);
@@ -170,7 +177,7 @@ void doStayingClosed() {
 void doPoweredOff() {
   if (!checkHome) {
     digitalWrite(motorDirectionPin, !forwardDirection);
-    analogWrite(motorPWMPin, motorReverseSpeed);
+    analogWrite(motorPWMPin, reverseMotorSpeed);
   }
   else {
     analogWrite(motorPWMPin, 0);
