@@ -2,6 +2,8 @@
 //code. It should be compatible with both the PCB and backup boards.
 //The full feature set to be implemented is yet to be determined.
 
+//Nothing has been tested.
+
 //libraries
 #include <FiniteStateMachine.h>
 
@@ -30,6 +32,10 @@ bool statusPressed = false;
 
 const byte NUMBER_OF_STATES = 6;
 
+void doTurnedOn() {
+  return;
+}
+
 //initialize states
 State turnedOn = State(doTurnedOn);
 State goingHome = State(doGoingHome);
@@ -43,11 +49,11 @@ FSM stateMachine = FSM(turnedOn);     //initialize state machine, start in state
 void setup() {
   //this will need to be adjusted later
   Serial.begin(9600);
-  pinMode(motorPin, OUTPUT);
-  pinMode(motorInterruptPin, OUTPUT);
-  pinMode(switchPollingPin, INPUT);
-  pinMode(motorDirectionPin, OUTPUT);
-  attachInterrupt(digitalPinToInterrupt(motorInterruptPin), reverseMotor, RISING);
+  pinMode(motorPWMPin, OUTPUT);
+//  pinMode(motorInterruptPin, OUTPUT);
+//  pinMode(switchPollingPin, INPUT);
+//  pinMode(motorDirectionPin, OUTPUT);
+//  attachInterrupt(digitalPinToInterrupt(motorInterruptPin), reverseMotor, RISING);
 }
 
 void loop() {
@@ -61,7 +67,7 @@ void loop() {
 //utility functions
 void checkPowerPressed() {
   if (powerPressed) {
-    if (stateMachine.getCurrentState() == poweredOff) {
+    if (stateMachine.isInState(poweredOff)) {
       stateMachine.transitionTo(turnedOn);
     }
     else {
@@ -71,16 +77,38 @@ void checkPowerPressed() {
 }
 
 void checkStatusPressed() {
-  if (digitalRead(statusBtnPin) == HIGH) {
+  if (digitalRead(statusBtnPin) == LOW && statusPressed) {
+    digitalWrite(statusLEDPin, LOW);
+    statusPressed = false;
+  }
+  if (digitalRead(statusBtnPin) == HIGH && !stateMachine.isInState(poweredOff)) {
+    digitalWrite(statusLEDPin, HIGH);
     statusPressed = true;
-  }
-  if (statusPressed && stateMachine.getCurrentState() != poweredOff) {
-    analogWrite(motorPin, 128);
-  }
-  else {
-    analogWrite(motorPin, 0);
   }
 }
 
 //state machine utility functions
+//void doTurnedOn() {
+//  return;
+//}
+
+void doGoingHome() {
+  
+}
+
+void doWaiting() {
+  
+}
+
+void doGoingForward() {
+  
+}
+
+void doStayingClosed() {
+  
+}
+
+void doPoweredOff() {
+  
+}
 
