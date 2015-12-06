@@ -34,7 +34,7 @@ volatile bool powerPressed = false;
 //anything else additional? add below.
 bool statusPressed = false;
 
-const byte NUMBER_OF_STATES = 6;
+const byte NUMBER_OF_STATES = 7;
 
 void doTurnedOn() {
   // This function was placed abote the initialize states to prevent a function 
@@ -58,9 +58,13 @@ State goingHome = State(doGoingHome);
 State waiting = State(doWaiting);
 State goingForward = State(doGoingForward);
 State stayingClosed = State(doStayingClosed);
+State poweringOff = State(doPoweringOff);
 State poweredOff = State(doPoweredOff);
 
 FSM stateMachine = FSM(turnedOn);     //initialize state machine, start in state: On
+//debugging
+//FSM previousStateMachine = FSM(turnedOn); 
+//debugging
 
 void doTurnedOnTransitions(bool nextState) {
   if (nextState == true) {
@@ -79,8 +83,13 @@ void setup() {
 //  pinMode(switchPollingPin, INPUT);
 //  pinMode(motorDirectionPin, OUTPUT);
   attachInterrupt(digitalPinToInterrupt(motorClosedPin), setMotorClosed, RISING);
+  attachInterrupt(digitalPinToInterrupt(motorClosedPin), setMotorNotClosed, FALLING);
   attachInterrupt(digitalPinToInterrupt(powerBtnPin), setPowerPressed, RISING);
 }
+// debugging lines
+//State previousState = State(goingHome); 
+//previousStateMachine.transitionTo(stateMachine.getCurrentState());
+// debugging lines
 
 void loop() {
   //perform main loop checks
@@ -90,13 +99,19 @@ void loop() {
   checkStatusPressed();
   
   stateMachine.update();
-
-  if (stateMachine.isInState(turnedOn)) {Serial.println("turned on");}
-  else if (stateMachine.isInState(waiting)) {Serial.println("waiting");}
-  else if (stateMachine.isInState(goingHome)) {Serial.println("going home");}
-  else if (stateMachine.isInState(stayingClosed)) {Serial.println("staying closed");}
-  else if (stateMachine.isInState(poweredOff)) {Serial.println("powered off");}
-  else if (stateMachine.isInState(goingForward)) {Serial.println("going forward");}
+  // debugging lines
+//  if (!stateMachine.isInState(previousState)){
+    if (stateMachine.isInState(turnedOn)) {Serial.println("turned on");}
+    else if (stateMachine.isInState(waiting)) {Serial.println("waiting");}
+    else if (stateMachine.isInState(goingHome)) {Serial.println("going home");}
+    else if (stateMachine.isInState(stayingClosed)) {Serial.println("staying closed");}
+    else if (stateMachine.isInState(poweringOff)) {Serial.println("powering off");}
+    else if (stateMachine.isInState(poweredOff)) {Serial.println("powered off");}
+    else if (stateMachine.isInState(goingForward)) {Serial.println("going forward");}
+  //}
+  //previousState = State(stateMachine.getCurrentState());
+  //Serial.println(stateMachine.isInState(previousState));
+  // debugging lines
 }
 
 //utility functions
@@ -106,7 +121,7 @@ void checkPowerPressed() {
       stateMachine.transitionTo(turnedOn);
     }
     else {
-      stateMachine.transitionTo(poweredOff);
+      stateMachine.transitionTo(poweringOff);
     }
    powerPressed = false;
   }
@@ -138,6 +153,10 @@ bool checkHome() {
 
 void setMotorClosed() {
   motorClosed = true;
+}
+
+void setMotorNotClosed() {
+  motorClosed = false;
 }
 
 //state machine utility functions
@@ -174,13 +193,18 @@ void doStayingClosed() {
   
 }
 
-void doPoweredOff() {
-  if (!checkHome) {
+void doPoweringOff() {
+  if (!checkHome()) {
     digitalWrite(motorDirectionPin, !forwardDirection);
     analogWrite(motorPWMPin, reverseMotorSpeed);
   }
   else {
     analogWrite(motorPWMPin, 0);
+    stateMachine.transitionTo(poweredOff);
   }
+}
+
+void doPoweredOff() {
+  
 }
 
