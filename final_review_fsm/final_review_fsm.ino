@@ -83,7 +83,7 @@ void setup() {
 //  pinMode(switchPollingPin, INPUT);
 //  pinMode(motorDirectionPin, OUTPUT);
   attachInterrupt(digitalPinToInterrupt(motorClosedPin), setMotorClosed, RISING);
-  attachInterrupt(digitalPinToInterrupt(motorClosedPin), setMotorNotClosed, FALLING);
+//  attachInterrupt(digitalPinToInterrupt(motorClosedPin), setMotorNotClosed, FALLING);
   attachInterrupt(digitalPinToInterrupt(powerBtnPin), setPowerPressed, RISING);
 }
 // debugging lines
@@ -155,9 +155,9 @@ void setMotorClosed() {
   motorClosed = true;
 }
 
-void setMotorNotClosed() {
-  motorClosed = false;
-}
+//void setMotorNotClosed() {
+//  motorClosed = false;
+//}
 
 //state machine utility functions
 void doGoingHome() {
@@ -201,6 +201,9 @@ void doPoweringOff() {
   else {
     analogWrite(motorPWMPin, 0);
     stateMachine.transitionTo(poweredOff);
+  }
+  if (digitalRead(motorClosedPin) == LOW) {
+    motorClosed = false;
   }
 }
 
