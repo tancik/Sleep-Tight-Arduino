@@ -144,6 +144,9 @@ bool checkHome() {
 
 void setMotorClosed() {
   cli(); //disable interrupts
+//  analogWrite(motorPWMPin, 0);
+//  delay(10);
+//  if (digitalRead(motorClosedPin)
   motorClosed = true;
   sei(); //reenable interrupt
 }

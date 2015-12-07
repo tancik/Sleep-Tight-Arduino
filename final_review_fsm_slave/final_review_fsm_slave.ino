@@ -38,7 +38,7 @@ int statusCheckNumOff = 6;
 //flags and global states
 //interrupts
 volatile bool motorClosed = false;
-volatile bool powerPressed = false;
+volatile bool lastPowerBtnState = false;
 //anything else additional? add below.
 bool statusPressed = false;
 
@@ -75,11 +75,12 @@ void setup() {
 //  pinMode(motorInterruptPin, OUTPUT);
 //  pinMode(switchPollingPin, INPUT);
 //  pinMode(motorDirectionPin, OUTPUT);
-  attachInterrupt(digitalPinToInterrupt(motorClosedPin), setMotorClosed, RISING);
+//  attachInterrupt(digitalPinToInterrupt(motorClosedPin), setMotorClosed, RISING);
 }
 
 void loop() {
   //perform main loop checks
+  checkMotorClosed();
   
   checkStatusPressed();
   
@@ -121,10 +122,13 @@ bool checkHome() {
   }
 }
 
-void setMotorClosed() {
-  cli(); //disable interrupts
-  motorClosed = true;
-  sei(); //reenable interrupt
+void checkMotorClosed() {
+  if (digitalRead(motorClosedPin) == HIGH) {
+    motorClosed = true;
+  }
+  else {
+    motorClosed = false;
+  }
 }
 
 void blinkLED(int ledPin, int blinkDelay, int numBlinks) {

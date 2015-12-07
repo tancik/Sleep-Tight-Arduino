@@ -38,7 +38,7 @@ int statusCheckNumOff = 6;
 //flags and global states
 //interrupts
 volatile bool motorClosed = false;
-volatile bool powerPressed = false;
+volatile bool lastPowerBtnState = false;
 //anything else additional? add below.
 bool statusPressed = false;
 
@@ -48,8 +48,7 @@ void doTurnedOn() {
   // This function was placed above the initialize states to prevent a function 
   // not defined. Furthremore, we must "extend" the function to prevent calling
   // an FSM object function which does not exist yet.
-  transmitToSlave(1, turnedOnStateNum);
-  transmitToSlave(2, turnedOnStateNum);
+  transmitToSlave(turnedOnStateNum);
   doTurnedOnTransition();
 }
 
@@ -76,12 +75,13 @@ void setup() {
 //  pinMode(motorInterruptPin, OUTPUT);
 //  pinMode(switchPollingPin, INPUT);
 //  pinMode(motorDirectionPin, OUTPUT);
-  attachInterrupt(digitalPinToInterrupt(motorClosedPin), setMotorClosed, RISING);
-  attachInterrupt(digitalPinToInterrupt(powerBtnPin), setPowerPressed, RISING);
+//  attachInterrupt(digitalPinToInterrupt(motorClosedPin), setMotorClosed, RISING);
+//  attachInterrupt(digitalPinToInterrupt(powerBtnPin), setPowerPressed, RISING);
 }
 
 void loop() {
   //perform main loop checks
+  checkMotorClosed();
   
   checkPowerPressed();
   
@@ -105,34 +105,20 @@ void loop() {
     else if (stateMachine.isInState(goingForward)) {Serial.println("going forward");}
 }
 
-//utility functions
 void checkPowerPressed() {
+  bool powerPressed = digitalRead(powerBtnPin);
   Serial.println(powerPressed);
-  if (powerPressed) {
-//    Serial.println(powerPressed);
+  if (powerPressed == true && powerPressed != lastPowerBtnState) {
     if (stateMachine.isInState(poweredOff)) {
       blinkLED(statusLEDPin, 300, 3);
       stateMachine.transitionTo(turnedOn);
     }
     else {
-      transmitToSlave(1, poweringOffStateNum);
-      transmitToSlave(2, poweringOffStateNum);
+      transmitToSlave(poweringOffStateNum);
       stateMachine.transitionTo(poweringOff);
     }
-   powerPressed = false;
   }
-}
-
-void setPowerPressed() {
-  cli(); //disable interrupts
-  Serial.println("setPowerPressed");
-  //This should be revised if possible. Due to erratic signals, the interrupt
-  //is being called during tightening. The poweringOff state is disabled
-  //during tightening as a consequence.
-  if (!stateMachine.isInState(goingForward) && !stateMachine.isInState(goingHome)) {
-    powerPressed = true;
-  }
-  sei(); //reenable interrupt
+  lastPowerBtnState = powerPressed;
 }
 
 void checkStatusPressed() {
@@ -141,14 +127,12 @@ void checkStatusPressed() {
     statusPressed = false;
   }
   else if (digitalRead(statusBtnPin) == HIGH && !stateMachine.isInState(poweredOff)) {
-    transmitToSlave(1, statusCheckNumOn);
-    transmitToSlave(2, statusCheckNumOn);
+    transmitToSlave(statusCheckNumOn);
     digitalWrite(statusLEDPin, HIGH);
     statusPressed = true;
   }
   else {
-    transmitToSlave(1, statusCheckNumOff);
-    transmitToSlave(2, statusCheckNumOff);
+    transmitToSlave(statusCheckNumOff);
   }
 }
 
@@ -161,10 +145,13 @@ bool checkHome() {
   }
 }
 
-void setMotorClosed() {
-  cli(); //disable interrupts
-  motorClosed = true;
-  sei(); //reenable interrupt
+void checkMotorClosed() {
+  if (digitalRead(motorClosedPin) == HIGH) {
+    motorClosed = true;
+  }
+  else {
+    motorClosed = false;
+  }
 }
 
 void blinkLED(int ledPin, int blinkDelay, int numBlinks) {
@@ -180,10 +167,13 @@ void blinkLED(int ledPin, int blinkDelay, int numBlinks) {
 }
 
 //I2C communication utility functions
-void transmitToSlave(int slaveAddress, int state) {
-  Wire.beginTransmission(slaveAddress);
+void transmitToSlave(int state) {
+  Wire.beginTransmission(1);
   Wire.write(state);
   Wire.endTransmission();
+//  Wire.beginTransmission(2);
+//  Wire.write(state);
+//  Wire.endTransmission();
 }
 
 //state machine utility functions
@@ -201,8 +191,7 @@ void doGoingHome() {
 
 void doWaiting() {
   if (timeElapsed >= waitTime) {
-    transmitToSlave(1, goingForwardStateNum);
-    transmitToSlave(2, goingForwardStateNum);
+    transmitToSlave(goingForwardStateNum);
     stateMachine.transitionTo(goingForward);
   }
 }
