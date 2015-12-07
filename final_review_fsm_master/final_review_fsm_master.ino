@@ -1,3 +1,4 @@
+#include <Wire.h>
 #include <elapsedMillis.h>
 #include <FiniteStateMachine.h>
 
@@ -27,6 +28,11 @@ const bool forwardDirection = HIGH;
 const int waitTime = 4000;
 elapsedMillis timeElapsed;
 
+//transmission state numbers
+int turnedOnStateNum = 0;
+int goingForwardStateNum = 1;
+int poweringOffStateNum = 2;
+
 //flags and global states
 //interrupts
 volatile bool motorClosed = false;
@@ -37,9 +43,11 @@ bool statusPressed = false;
 const byte NUMBER_OF_STATES = 7;
 
 void doTurnedOn() {
-  // This function was placed abote the initialize states to prevent a function 
+  // This function was placed above the initialize states to prevent a function 
   // not defined. Furthremore, we must "extend" the function to prevent calling
   // an FSM object function which does not exist yet.
+  transmitToSlave(1, turnedOnStateNum);
+  transmitToSlave(2, turnedOnStateNum);
   doTurnedOnTransition();
 }
 
@@ -61,6 +69,7 @@ void doTurnedOnTransition() {
 void setup() {
   //this will need to be adjusted later
   Serial.begin(9600);
+  Wire.begin();
   pinMode(motorPWMPin, OUTPUT);
 //  pinMode(motorInterruptPin, OUTPUT);
 //  pinMode(switchPollingPin, INPUT);
@@ -104,6 +113,8 @@ void checkPowerPressed() {
       stateMachine.transitionTo(turnedOn);
     }
     else {
+      transmitToSlave(1, poweringOffStateNum);
+      transmitToSlave(2, poweringOffStateNum);
       stateMachine.transitionTo(poweringOff);
     }
    powerPressed = false;
@@ -160,6 +171,13 @@ void blinkLED(int ledPin, int blinkDelay, int numBlinks) {
    }
 }
 
+//I2C communication utility functions
+void transmitToSlave(int slaveAddress, int state) {
+  Wire.beginTransmission(slaveAddress);
+  Wire.write(state);
+  Wire.endTransmission();
+}
+
 //state machine utility functions
 void doGoingHome() {
   if (checkHome() && !stateMachine.isInState(waiting)) {
@@ -175,6 +193,8 @@ void doGoingHome() {
 
 void doWaiting() {
   if (timeElapsed >= waitTime) {
+    transmitToSlave(1, goingForwardStateNum);
+    transmitToSlave(2, goingForwardStateNum);
     stateMachine.transitionTo(goingForward);
   }
 }
