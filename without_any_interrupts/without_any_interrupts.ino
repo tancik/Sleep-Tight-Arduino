@@ -1,4 +1,3 @@
-#include <Wire.h>
 #include <elapsedMillis.h>
 #include <FiniteStateMachine.h>
 
@@ -28,13 +27,6 @@ const bool forwardDirection = HIGH;
 const int waitTime = 4000;
 elapsedMillis timeElapsed;
 
-//transmission state numbers
-int turnedOnStateNum = 2;
-int goingForwardStateNum = 3;
-int poweringOffStateNum = 4;
-int statusCheckNumOn = 5;
-int statusCheckNumOff = 6;
-
 //flags and global states
 //interrupts
 volatile bool motorClosed = false;
@@ -45,7 +37,7 @@ bool statusPressed = false;
 const byte NUMBER_OF_STATES = 7;
 
 void doTurnedOn() {
-  // This function was placed above the initialize states to prevent a function 
+  // This function was placed abote the initialize states to prevent a function 
   // not defined. Furthremore, we must "extend" the function to prevent calling
   // an FSM object function which does not exist yet.
   doTurnedOnTransition();
@@ -63,25 +55,27 @@ State poweredOff = State(doPoweredOff);
 FSM stateMachine = FSM(turnedOn);     //initialize state machine, start in state: On
 
 void doTurnedOnTransition() {
-  blinkLED(statusLEDPin, 300, 3);
   stateMachine.transitionTo(goingHome);
 }
 
 void setup() {
   //this will need to be adjusted later
   Serial.begin(9600);
-  Wire.begin(2); //make sure to set the address for the proper board
-  Wire.onReceive(receiveMasterState);
   pinMode(motorPWMPin, OUTPUT);
+  pinMode(motorOpenPin, INPUT_PULLUP);
+  pinMode(motorClosedPin, INPUT_PULLUP);
 //  pinMode(motorInterruptPin, OUTPUT);
 //  pinMode(switchPollingPin, INPUT);
 //  pinMode(motorDirectionPin, OUTPUT);
 //  attachInterrupt(digitalPinToInterrupt(motorClosedPin), setMotorClosed, RISING);
+//  attachInterrupt(digitalPinToInterrupt(powerBtnPin), setPowerPressed, RISING);
 }
 
 void loop() {
   //perform main loop checks
   checkMotorClosed();
+  
+  checkPowerPressed();
   
   checkStatusPressed();
   
@@ -95,8 +89,8 @@ void loop() {
     Serial.print("\t");
     
     if (stateMachine.isInState(turnedOn)) {Serial.println("turned on");}
-    else if (stateMachine.isInState(goingHome)) {Serial.println("going home");}
     else if (stateMachine.isInState(waiting)) {Serial.println("waiting");}
+    else if (stateMachine.isInState(goingHome)) {Serial.println("going home");}
     else if (stateMachine.isInState(stayingClosed)) {Serial.println("staying closed");}
     else if (stateMachine.isInState(poweringOff)) {Serial.println("powering off");}
     else if (stateMachine.isInState(poweredOff)) {Serial.println("powered off");}
@@ -104,6 +98,21 @@ void loop() {
 }
 
 //utility functions
+void checkPowerPressed() {
+  bool powerPressed = digitalRead(powerBtnPin);
+  Serial.println(powerPressed);
+  if (powerPressed == true && powerPressed != lastPowerBtnState) {
+    if (stateMachine.isInState(poweredOff)) {
+      blinkLED(statusLEDPin, 300, 3);
+      stateMachine.transitionTo(turnedOn);
+    }
+    else {
+      stateMachine.transitionTo(poweringOff);
+    }
+  }
+  lastPowerBtnState = powerPressed;
+}
+
 void checkStatusPressed() {
   if (digitalRead(statusBtnPin) == LOW && statusPressed) {
     digitalWrite(statusLEDPin, LOW);
@@ -145,30 +154,11 @@ void blinkLED(int ledPin, int blinkDelay, int numBlinks) {
    }
 }
 
-//I2C communication utility functions
-void receiveMasterState(int howMany) {
-  int state = Wire.read();
-  if (state == turnedOnStateNum) {
-    stateMachine.transitionTo(turnedOn);
-  }
-  else if (state == goingForwardStateNum) {
-    stateMachine.transitionTo(goingForward);
-  }
-  else if (state == poweringOffStateNum) {
-    stateMachine.transitionTo(poweringOff);
-  }
-  else if (state == statusCheckNumOn) {
-    digitalWrite(statusLEDPin, HIGH);
-  }
-  else if (state == statusCheckNumOff) {
-    digitalWrite(statusLEDPin, LOW);
-  }
-}
-
 //state machine utility functions
 void doGoingHome() {
-  if (checkHome()) {
+  if (checkHome() && !stateMachine.isInState(waiting)) {
     analogWrite(motorPWMPin, 0);
+    timeElapsed = 0;
     stateMachine.transitionTo(waiting);
   }
   else {
@@ -178,6 +168,9 @@ void doGoingHome() {
 }
 
 void doWaiting() {
+  if (timeElapsed >= waitTime) {
+    stateMachine.transitionTo(goingForward);
+  }
 }
 
 void doGoingForward() {

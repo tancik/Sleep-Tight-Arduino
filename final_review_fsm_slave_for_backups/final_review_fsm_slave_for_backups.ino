@@ -70,9 +70,11 @@ void doTurnedOnTransition() {
 void setup() {
   //this will need to be adjusted later
   Serial.begin(9600);
-  Wire.begin(2); //make sure to set the address for the proper board
+  Wire.begin(1); //make sure to set the address for the proper board
   Wire.onReceive(receiveMasterState);
   pinMode(motorPWMPin, OUTPUT);
+  pinMode(motorClosedPin, INPUT_PULLUP);
+  pinMode(motorOpenPin, INPUT_PULLUP);
 //  pinMode(motorInterruptPin, OUTPUT);
 //  pinMode(switchPollingPin, INPUT);
 //  pinMode(motorDirectionPin, OUTPUT);
@@ -116,7 +118,7 @@ void checkStatusPressed() {
 }
 
 bool checkHome() {
-  if (digitalRead(motorOpenPin) == HIGH) {
+  if (digitalRead(motorOpenPin) == LOW) {
     return true;
   }
   else {
@@ -125,7 +127,7 @@ bool checkHome() {
 }
 
 void checkMotorClosed() {
-  if (digitalRead(motorClosedPin) == HIGH) {
+  if (digitalRead(motorClosedPin) == LOW) {
     motorClosed = true;
   }
   else {
@@ -204,7 +206,7 @@ void doPoweringOff() {
     analogWrite(motorPWMPin, 0);
     stateMachine.transitionTo(poweredOff);
   }
-  if (digitalRead(motorClosedPin) == LOW) {
+  if (digitalRead(motorClosedPin) == HIGH) {
     motorClosed = false;
   }
 }

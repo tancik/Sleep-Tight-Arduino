@@ -13,7 +13,7 @@
 #include <Wire.h>
 
 void setup() {
-  Wire.begin(1);                // join i2c bus with address #8
+  Wire.begin(2);                // join i2c bus with address #8
   Wire.onRequest(requestEvent); // register event
 }
 
@@ -24,5 +24,5 @@ void loop() {
 // function that executes whenever data is received from master
 // this function is registered as an event, see setup()
 void requestEvent() {
-  Wire.write("hello ");
+  Wire.write("hello2");
 }

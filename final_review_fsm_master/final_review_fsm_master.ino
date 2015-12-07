@@ -171,9 +171,9 @@ void transmitToSlave(int state) {
   Wire.beginTransmission(1);
   Wire.write(state);
   Wire.endTransmission();
-//  Wire.beginTransmission(2);
-//  Wire.write(state);
-//  Wire.endTransmission();
+  Wire.beginTransmission(2);
+  Wire.write(state);
+  Wire.endTransmission();
 }
 
 //state machine utility functions
