@@ -48,15 +48,12 @@ void doTurnedOn() {
   // This function was placed above the initialize states to prevent a function 
   // not defined. Furthremore, we must "extend" the function to prevent calling
   // an FSM object function which does not exist yet.
-  transmitToSlave(1, turnedOnStateNum);
-  transmitToSlave(2, turnedOnStateNum);
   doTurnedOnTransition();
 }
 
 //initialize states
 State turnedOn = State(doTurnedOn);
 State goingHome = State(doGoingHome);
-State waiting = State(doWaiting);
 State goingForward = State(doGoingForward);
 State stayingClosed = State(doStayingClosed);
 State poweringOff = State(doPoweringOff);
@@ -65,25 +62,24 @@ State poweredOff = State(doPoweredOff);
 FSM stateMachine = FSM(turnedOn);     //initialize state machine, start in state: On
 
 void doTurnedOnTransition() {
+  blinkLED(statusLEDPin, 300, 3);
   stateMachine.transitionTo(goingHome);
 }
 
 void setup() {
   //this will need to be adjusted later
   Serial.begin(9600);
-  Wire.begin();
+  Wire.begin(1); //make sure to set the address for the proper board
+  Wire.onReceive(receiveMasterState);
   pinMode(motorPWMPin, OUTPUT);
 //  pinMode(motorInterruptPin, OUTPUT);
 //  pinMode(switchPollingPin, INPUT);
 //  pinMode(motorDirectionPin, OUTPUT);
   attachInterrupt(digitalPinToInterrupt(motorClosedPin), setMotorClosed, RISING);
-  attachInterrupt(digitalPinToInterrupt(powerBtnPin), setPowerPressed, RISING);
 }
 
 void loop() {
   //perform main loop checks
-  
-  checkPowerPressed();
   
   checkStatusPressed();
   
@@ -97,7 +93,6 @@ void loop() {
     Serial.print("\t");
     
     if (stateMachine.isInState(turnedOn)) {Serial.println("turned on");}
-    else if (stateMachine.isInState(waiting)) {Serial.println("waiting");}
     else if (stateMachine.isInState(goingHome)) {Serial.println("going home");}
     else if (stateMachine.isInState(stayingClosed)) {Serial.println("staying closed");}
     else if (stateMachine.isInState(poweringOff)) {Serial.println("powering off");}
@@ -106,49 +101,14 @@ void loop() {
 }
 
 //utility functions
-void checkPowerPressed() {
-  Serial.println(powerPressed);
-  if (powerPressed) {
-//    Serial.println(powerPressed);
-    if (stateMachine.isInState(poweredOff)) {
-      blinkLED(statusLEDPin, 300, 3);
-      stateMachine.transitionTo(turnedOn);
-    }
-    else {
-      transmitToSlave(1, poweringOffStateNum);
-      transmitToSlave(2, poweringOffStateNum);
-      stateMachine.transitionTo(poweringOff);
-    }
-   powerPressed = false;
-  }
-}
-
-void setPowerPressed() {
-  cli(); //disable interrupts
-  Serial.println("setPowerPressed");
-  //This should be revised if possible. Due to erratic signals, the interrupt
-  //is being called during tightening. The poweringOff state is disabled
-  //during tightening as a consequence.
-  if (!stateMachine.isInState(goingForward) && !stateMachine.isInState(goingHome)) {
-    powerPressed = true;
-  }
-  sei(); //reenable interrupt
-}
-
 void checkStatusPressed() {
   if (digitalRead(statusBtnPin) == LOW && statusPressed) {
     digitalWrite(statusLEDPin, LOW);
     statusPressed = false;
   }
-  else if (digitalRead(statusBtnPin) == HIGH && !stateMachine.isInState(poweredOff)) {
-    transmitToSlave(1, statusCheckNumOn);
-    transmitToSlave(2, statusCheckNumOn);
+  if (digitalRead(statusBtnPin) == HIGH && !stateMachine.isInState(poweredOff)) {
     digitalWrite(statusLEDPin, HIGH);
     statusPressed = true;
-  }
-  else {
-    transmitToSlave(1, statusCheckNumOff);
-    transmitToSlave(2, statusCheckNumOff);
   }
 }
 
@@ -180,30 +140,33 @@ void blinkLED(int ledPin, int blinkDelay, int numBlinks) {
 }
 
 //I2C communication utility functions
-void transmitToSlave(int slaveAddress, int state) {
-  Wire.beginTransmission(slaveAddress);
-  Wire.write(state);
-  Wire.endTransmission();
+void receiveMasterState(int howMany) {
+  int state = Wire.read();
+  if (state == turnedOnStateNum) {
+    stateMachine.transitionTo(turnedOn);
+  }
+  else if (state == goingForwardStateNum) {
+    stateMachine.transitionTo(goingForward);
+  }
+  else if (state == poweringOffStateNum) {
+    stateMachine.transitionTo(poweringOff);
+  }
+  else if (state == statusCheckNumOn) {
+    digitalWrite(statusLEDPin, HIGH);
+  }
+  else if (state == statusCheckNumOff) {
+    digitalWrite(statusLEDPin, LOW);
+  }
 }
 
 //state machine utility functions
 void doGoingHome() {
-  if (checkHome() && !stateMachine.isInState(waiting)) {
+  if (checkHome()) {
     analogWrite(motorPWMPin, 0);
-    timeElapsed = 0;
-    stateMachine.transitionTo(waiting);
   }
   else {
     digitalWrite(motorDirectionPin, !forwardDirection);
     analogWrite(motorPWMPin, reverseMotorSpeed);
-  }
-}
-
-void doWaiting() {
-  if (timeElapsed >= waitTime) {
-    transmitToSlave(1, goingForwardStateNum);
-    transmitToSlave(2, goingForwardStateNum);
-    stateMachine.transitionTo(goingForward);
   }
 }
 
